@@ -2,7 +2,8 @@ import RPi.GPIO as GPIO
 
 # Global GPIO config
 GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
+GPIO.setwarnings(True)
 
 def cleanup():
-    GPIO.cleanup()
+    print("Cleaning up GPIO...")
+    # GPIO.cleanup()

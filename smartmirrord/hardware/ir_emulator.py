@@ -32,13 +32,18 @@ class IREmulator:
         return pulses
 
     def send_raw(self, pulses):
+        print(f"[DEBUG] Pin state before sending:", GPIO.input(self.pin))
+        print(f"[DEBUG] Pin mode:", GPIO.gpio_function(self.pin))
         try:
+            # GPIO.output(self.pin, 1)
             for level, duration in pulses:
                 GPIO.output(self.pin, level)
                 time.sleep(us_to_seconds(duration))
-            GPIO.output(self.pin, 0)
         except:
-            raise Exception("IR send failed")
+            raise IOError("IR send failed")
+        finally:
+            GPIO.output(self.pin, 1)
+            print(f"[DEBUG] Pulses generated: {len(pulses)}")
 
     def send(self, command):
         command = command.lower()
@@ -46,4 +51,6 @@ class IREmulator:
             raise ValueError(f"Unknown IR command: {command}")
 
         pulses = self.generate_pulses(CODES[command])
-        self.send_raw(pulses)
+        for _ in range(2):
+            self.send_raw(pulses)
+            time.sleep(0.005)
