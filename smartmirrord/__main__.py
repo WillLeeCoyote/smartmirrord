@@ -1,29 +1,27 @@
 import time
-import sys
-from smartmirrord.config import DEBUG_MODE
+from smartmirrord.hardware.power_status import PowerStatusGPIO
+from smartmirrord.services.power_service import PowerService
 
 def main():
-    """
-    Main entry point for the Smart Mirror daemon.
-    """
-    print("Starting Smart Mirror Daemon...")
+    power_gpio = PowerStatusGPIO()
+    power_service = PowerService(power_gpio)
+
     try:
+        print("Starting SmartMirror power monitor...")
         while True:
-            # Placeholder for hardware monitoring logic
-            # e.g., check_sensors()
-            # e.g., update_display()
-            if DEBUG_MODE:
-                print("Monitoring hardware...") # Debug print, replace with actual logging later
-            
-            # Sleep for a short interval before the next check
-            time.sleep(1) 
-            
+            if power_service.is_power_on():
+                print("TV Power: ON")
+            else:
+                print("TV Power: OFF")
+            # Pulses on/off every second for 5-6 seconds when powering on
+            time.sleep(.25)
+
     except KeyboardInterrupt:
-        print("\nStopping Smart Mirror Daemon...")
-        sys.exit(0)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        sys.exit(1)
+        print("\nExiting power monitor.")
+    finally:
+        # Optional: clean up GPIO if needed
+        print("Cleanup complete.")
+
 
 if __name__ == "__main__":
     main()
