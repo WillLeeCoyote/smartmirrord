@@ -10,7 +10,6 @@ class PowerStatus:
 
     def __init__(self, pin: int = GPIO_POWER_STATUS_PIN):
         self.pin = pin
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
     def is_on(self) -> bool:

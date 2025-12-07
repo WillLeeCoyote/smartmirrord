@@ -16,11 +16,7 @@ def us_to_seconds(us):
 class IREmulator:
     def __init__(self, pin: int = GPIO_IR_INPUT_PIN):
         self.pin = pin
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.OUT)
-
-    def cleanup(self):
-        GPIO.cleanup(self.pin)
 
     def generate_pulses(self, command_value):
         pulses = [(0, LEADER_LOW), (1, LEADER_HIGH)]
@@ -41,9 +37,8 @@ class IREmulator:
                 GPIO.output(self.pin, level)
                 time.sleep(us_to_seconds(duration))
             GPIO.output(self.pin, 0)
-        finally:
-            #   self.cleanup()
-            print("Sent IR command.")
+        except:
+            raise Exception("IR send failed")
 
     def send(self, command):
         command = command.lower()

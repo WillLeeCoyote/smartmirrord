@@ -1,4 +1,6 @@
 import time
+
+from smartmirrord.hardware import gpio_helper
 from smartmirrord.hardware.power_status import PowerStatus
 from smartmirrord.services.power_service import PowerService
 from smartmirrord.hardware.ir_emulator import IREmulator
@@ -23,7 +25,7 @@ def main():
     except KeyboardInterrupt:
         print("\nExiting power monitor.")
     finally:
-        # Optional: clean up GPIO if needed
+        gpio_helper.cleanup()
         print("Cleanup complete.")
 
 
