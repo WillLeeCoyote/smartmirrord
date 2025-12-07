@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 from smartmirrord.config import GPIO_POWER_STATUS_PIN
 
-class PowerStatusGPIO:
+class PowerStatus:
     """
     Low-level hardware access for reading the TV's LED pin.
     LED pulses ON/OFF 1s for 5-6s when powering on.

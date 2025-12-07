@@ -1,0 +1,9 @@
+# NEC timing values in microseconds
+LEADER_LOW = 4500
+LEADER_HIGH = 4500
+
+BIT_LOW = 560
+BIT_HIGH_0 = 560
+BIT_HIGH_1 = 1690
+
+STOP_LOW = 560

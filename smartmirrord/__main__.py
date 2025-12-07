@@ -1,10 +1,12 @@
 import time
-from smartmirrord.hardware.power_status import PowerStatusGPIO
+from smartmirrord.hardware.power_status import PowerStatus
 from smartmirrord.services.power_service import PowerService
+from smartmirrord.hardware.ir_emulator import IREmulator
 
 def main():
-    power_gpio = PowerStatusGPIO()
+    power_gpio = PowerStatus()
     power_service = PowerService(power_gpio)
+    ir_emulator = IREmulator()
 
     try:
         print("Starting SmartMirror power monitor...")
@@ -13,8 +15,10 @@ def main():
                 print("TV Power: ON")
             else:
                 print("TV Power: OFF")
+                ir_emulator.send("power")
+                time.sleep(12)
             # Pulses on/off every second for 5-6 seconds when powering on
-            time.sleep(.25)
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print("\nExiting power monitor.")
