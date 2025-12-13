@@ -47,6 +47,7 @@ class IREmulator:
             raise ValueError(f"Unknown IR command: {command}")
 
         pulses = self.generate_pulses(CODES[command])
+        # bitbang style send here. May be python typing issue but this works for now. s
         for _ in range(5):
             self.send_raw(pulses)
             time.sleep(0.005)
