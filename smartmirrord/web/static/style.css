@@ -19,7 +19,7 @@ div.menu-grid {
     border-left: 1px solid #c2c1c1;
 }
 
-div.menu-grid>div {
+div.menu-grid > div {
     padding: 10px 35px;
     border-top: 1px solid #c2c1c1;
     border-right: 1px solid #c2c1c1;
@@ -30,13 +30,13 @@ span.label {
     color: #8e8e8e;
 }
 
-div.menu-grid>div>i {
+div.menu-grid > div > i {
     color: #2e2e2e;
     font-size: 1.2em;
     margin-bottom: 5px;
 }
 
-div.menu-grid>div>i.active {
+div.menu-grid > div > i.active {
     color: #d51600;
 }
 
@@ -47,10 +47,9 @@ div.rounded-bg {
 
 div.grey-bg {
     background: #d9d9d9;
-    border-radius: 50%;
 }
 
-i.home-icon {
+i.rb-icon {
     font-size: 24px;
     color: #a1a1a1;
 }
@@ -58,15 +57,6 @@ i.home-icon {
 i.control-icon {
     font-size: 24px;
     color: #2e2e2e;
-}
-
-div.circle {
-    border: 1px solid #c2c1c1;
-    border-radius: 50%;
-}
-
-div.ok-inner {
-    padding: 30px;
 }
 
 .clickable {
@@ -82,29 +72,114 @@ div.ok-inner {
 }
 
 .clickable:active {
-    transform: scale(0.98);
+    transform: scale(0.95);
 }
 
 .clickable:hover i {
-    color: #0d6efd; /* Bootstrap primary-ish */
+    color: #0d6efd;
 }
 
-div.ok-outer {
-    padding: 100px;
+.dpad-plus {
+    display: grid;
+    grid-template-columns: 75px 75px 75px;
+    grid-template-rows: 75px 75px 75px;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    margin-top: -45px;
+    margin-bottom: -110px;
 }
 
-i.right {
-    transform: translate(70px);
+.dpad-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 75px;
+    height: 75px;
 }
 
-i.bottom {
-    transform: rotate(90deg) translate(70px);
+.up {
+    grid-column: 2;
+    grid-row: 1;
+    border-radius: 30px 30px 10px 10px;
 }
 
-i.left {
-    transform: rotate(180deg) translate(70px);
+.down {
+    grid-column: 2;
+    grid-row: 3;
+    border-radius: 10px 10px 30px 30px;
 }
 
-i.top {
-    transform: rotate(270deg) translate(70px);
+.left {
+    grid-column: 1;
+    grid-row: 2;
+    border-radius: 30px 10px 10px 30px;
+}
+
+.right {
+    grid-column: 3;
+    grid-row: 2;
+    border-radius: 10px 30px 30px 10px;
+}
+
+.dpad-ok {
+    grid-column: 2;
+    grid-row: 2;
+    width: 75px;
+    height: 75px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Numpad Modal Overlay */
+.modal-overlay {
+    display: none; /* hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Modal Content */
+.num-modal-content {
+    width: 250px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modal Header */
+.modal-header span {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.close-btn {
+    font-size: 24px;
+}
+
+/* Number grid styled like your menu/grid buttons */
+.num-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(4, 60px);
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.num-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    height: 60px;
+    color: #2e2e2e;
 }

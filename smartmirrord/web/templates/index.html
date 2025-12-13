@@ -6,110 +6,166 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartMirror - Remote</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css "
+          integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+          crossorigin="anonymous"/>
     <link rel="stylesheet" href="../static/style.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
 </head>
-
 <body>
-    <!--container-->
-    <div class="container">
-        <div class="d-flex flex-row justify-content-between px-3 py-4 align-items-center">
-            <i class="fas fa-chevron-left"></i>
-            <span>Smart Mirror</span>
-            <i class="fas fa-ellipsis-h"></i>
+<!--container-->
+<div class="container">
+    <div class="d-flex flex-row justify-content-between px-3 py-4 align-items-center">
+        <i class="fa-solid fa-chevron-left"></i>
+        <span>Smart Mirror</span>
+        <i class="fa-solid fa-ellipsis-h"></i>
+    </div>
+
+    <div class="d-flex flex-row justify-content-center">
+        <div class="menu-grid">
+            <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('power')">
+                <i class="fa-solid fa-power-off active"></i>
+                <span class="label">Power</span>
+            </div>
+            <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('source')">
+                <i class="fa-solid fa-sign-in-alt"></i>
+                <span class="label">Input</span>
+            </div>
+            <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('tools')">
+                <i class="fa-solid fa-cog"></i>
+                <span class="label">Tools</span>
+            </div>
+            <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('menu')">
+                <i class="fa-solid fa-bars"></i>
+                <span class="label">Menu</span>
+            </div>
+            <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('list')">
+                <i class="fa-solid fa-list"></i>
+                <span class="label">List</span>
+            </div>
+            <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('back')">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span class="label">Back</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-row mt-4 justify-content-between px-2">
+
+        <div class="d-flex flex-column rounded-bg py-3 px-4 justify-content-center align-items-center">
+
+            <div class="control-area d-flex justify-content-center align-items-center w-100 clickable"
+                 onclick="sendCommand('chup')">
+                <i class="fa-solid fa-chevron-up py-3 control-icon"></i>
+            </div>
+
+            <span class="label py-3">Channel</span>
+
+            <div class="control-area d-flex justify-content-center align-items-center w-100 clickable"
+                 onclick="sendCommand('chdown')">
+                <i class="fa-solid fa-chevron-down py-3 control-icon"></i>
+            </div>
+        </div>
+        <div class="d-flex flex-column align-items-center">
+            <div class="d-flex flex-row rounded-bg justify-content-center align-items-center clickable">
+                <i class="fa-solid fa-hashtag m-3 rb-icon"></i>
+            </div>
+            <span class="label">Num</span>
         </div>
 
-        <div class="d-flex flex-row justify-content-center">
-            <div class="menu-grid">
-                <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('power')">
-                    <i class="fas fa-power-off active"></i>
-                    <span class="label">Power</span>
-                </div>
-                <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('source')">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span class="label">Input</span>
-                </div>
-                <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('tools')">
-                    <i class="fas fa-cog"></i>
-                    <span class="label">Tools</span>
-                </div>
-                <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('menu')">
-                    <i class="fas fa-bars"></i>
-                    <span class="label">Menu</span>
-                </div>
-                <div class="d-flex flex-column align-items-center">
-                    <i class="fas fa-circle"></i>
-                    <span class="label">Numeric</span>
-                </div>
-                <div class="d-flex flex-column align-items-center clickable" onclick="sendCommand('back')">
-                    <i class="fas fa-arrow-left"></i>
-                    <span class="label">Back</span>
-                </div>
+        <div class="d-flex flex-column rounded-bg py-3 px-4 justify-content-center align-items-center">
+
+            <div class="control-area d-flex justify-content-center align-items-center w-100 clickable"
+                 onclick="sendCommand('volup')">
+                <i class="fa-solid fa-plus py-3 control-icon"></i>
+            </div>
+
+            <span class="label py-3">Volume</span>
+
+            <div class="control-area d-flex justify-content-center align-items-center w-100 clickable"
+                 onclick="sendCommand('voldown')">
+                <i class="fa-solid fa-minus py-3 control-icon"></i>
             </div>
         </div>
 
-<div class="d-flex flex-row mt-4 justify-content-between px-2">
+    </div>
 
-    <div class="d-flex flex-column rounded-bg py-3 px-4 justify-content-center align-items-center">
 
-        <div class="control-area d-flex justify-content-center align-items-center w-100 clickable" onclick="sendCommand('chup')">
-            <i class="fas fa-chevron-up py-3 control-icon"></i>
+    <div class="dpad-plus">
+        <div class="dpad-btn up clickable grey-bg" onclick="sendCommand('up')">
+            <i class="fa-solid fa-chevron-up control-icon"></i>
         </div>
 
-        <span class="label py-3">Channel</span>
+        <div class="dpad-btn left clickable grey-bg" onclick="sendCommand('left')">
+            <i class="fa-solid fa-chevron-left control-icon"></i>
+        </div>
 
-        <div class="control-area d-flex justify-content-center align-items-center w-100 clickable" onclick="sendCommand('chdown')">
-            <i class="fas fa-chevron-down py-3 control-icon"></i>
+        <div class="dpad-ok clickable circle ok-inner" onclick="sendCommand('ok')">
+            OK
+        </div>
+
+        <div class="dpad-btn right clickable grey-bg" onclick="sendCommand('right')">
+            <i class="fa-solid fa-chevron-right control-icon"></i>
+        </div>
+
+        <div class="dpad-btn down clickable grey-bg" onclick="sendCommand('down')">
+            <i class="fa-solid fa-chevron-down control-icon"></i>
         </div>
     </div>
 
-    <div class="d-flex flex-column align-items-center">
-        <div class="d-flex flex-row grey-bg justify-content-center align-items-center">
-            <i class="fas fa-home p-3 home-icon"></i>
+
+    <div class="d-flex flex-row justify-content-between mt-5 pt-4 px-3">
+        <div class="d-flex flex-row rounded-bg">
+            <i class="fa-solid fa-ellipsis-h m-3 control-icon"></i>
         </div>
-        <span class="label">Home</span>
-    </div>
-
-    <div class="d-flex flex-column rounded-bg py-3 px-4 justify-content-center align-items-center">
-
-        <div class="control-area d-flex justify-content-center align-items-center w-100 clickable" onclick="sendCommand('volup')">
-            <i class="fas fa-plus py-3 control-icon"></i>
-        </div>
-
-        <span class="label py-3">Volume</span>
-
-        <div class="control-area d-flex justify-content-center align-items-center w-100 clickable" onclick="sendCommand('voldown')">
-            <i class="fas fa-minus py-3 control-icon"></i>
+        <div class="d-flex flex-row rounded-bg clickable">
+            <i class="fa-solid fa-volume-mute m-3 control-icon" onclick="sendCommand('mute')"></i>
         </div>
     </div>
-
 </div>
-
-
-        <div class="mt-5 pt-4 position-relative d-flex flex-row justify-content-center align-items-center">
-            <div class="circle ok-inner position-absolute clickable" onclick="sendCommand('ok')">
-                <span>OK</span>
+<!-- Numberpad Modal -->
+<div id="numModal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="num-modal-content rounded-bg">
+        <div class="modal-header d-flex justify-content-between align-items-center px-3 py-2">
+            <span>Number Pad</span>
+            <div class="close-btn d-flex flex-row rounded-bg clickable">
+                <i class="close-btn fa-solid fa-xmark m-1"></i>
             </div>
-            <div class="circle ok-outer position-absolute"></div>
-            <i class="fas fa-caret-right position-absolute control-icon right clickable" onclick="sendCommand('right')"></i>
-            <i class="fas fa-caret-right position-absolute control-icon bottom clickable" onclick="sendCommand('down')"></i>
-            <i class="fas fa-caret-right position-absolute control-icon left clickable" onclick="sendCommand('left')"></i>
-            <i class="fas fa-caret-right position-absolute control-icon top clickable" onclick="sendCommand('up')"></i>
         </div>
-
-        <div class="d-flex flex-row justify-content-between mt-5 pt-4 px-3">
-            <div class="d-flex flex-row grey-bg">
-                <i class="fas fa-ellipsis-h p-3 control-icon"></i>
-            </div>
-            <div class="d-flex flex-row grey-bg">
-                <i class="fas fa-volume-mute p-3 control-icon clickable" onclick="sendCommand('mute')"></i>
-            </div>
+        <div class="num-grid d-grid">
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('1')">1</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('2')">2</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('3')">3</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('4')">4</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('5')">5</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('6')">6</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('7')">7</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('8')">8</div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('9')">9</div>
+            <div></div>
+            <div class="num-btn rounded-bg clickable" onclick="sendCommand('0')">0</div>
+            <div></div>
         </div>
     </div>
+</div>
 <script>
+    // Show modal when clicking Num button
+    document.querySelector('.fa-hashtag').parentElement.addEventListener('click', () => {
+        document.getElementById('numModal').style.display = 'flex';
+    });
+
+    // Close modal when clicking X or outside modal
+    function closeModal(event) {
+        event.stopPropagation();
+        const modal = document.getElementById('numModal');
+        if (event.target === modal || event.target.classList.contains('close-btn')) {
+            modal.style.display = 'none';
+        }
+    }
+
     async function sendCommand(cmd) {
         const response = await fetch('/send_command', {
             method: 'POST',
