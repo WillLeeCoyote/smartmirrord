@@ -6,4 +6,4 @@ GPIO.setwarnings(True)
 
 def cleanup():
     print("Cleaning up GPIO...")
-    # GPIO.cleanup()
+    GPIO.cleanup()
