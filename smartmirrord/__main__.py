@@ -2,14 +2,13 @@ import threading
 import time
 
 from smartmirrord.hardware import gpio_helper
-from smartmirrord.hardware.power_status import PowerStatus
 from smartmirrord.services.power_service import PowerService
-from smartmirrord.hardware.ir_emulator import IREmulator
+from smartmirrord.services.ir_service import IRService
 from smartmirrord.web.routes import web_remote
 
 
 def main():
-    ir_emulator = IREmulator()
+    ir_service = IRService()
 
     def on_power_on():
         print("TV Power: ON")
@@ -22,10 +21,6 @@ def main():
     power_service = PowerService(
         on_power_on=on_power_on,
         on_power_off=on_power_off,
-    )
-
-    power_gpio = PowerStatus(
-        on_change=power_service.handle_power_change
     )
 
     web_thread = threading.Thread(

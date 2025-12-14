@@ -1,8 +1,8 @@
 from typing import Callable, Optional
+from smartmirrord.hardware.power_status import PowerStatus
 
 
 class PowerService:
-
     def __init__(
             self,
             on_power_on: Optional[Callable[[], None]] = None,
@@ -11,6 +11,8 @@ class PowerService:
         self._is_on: bool | None = None
         self.on_power_on = on_power_on
         self.on_power_off = on_power_off
+
+        self._power_gpio = PowerStatus(on_change=self.handle_power_change)
 
     def handle_power_change(self, is_on: bool):
         """
