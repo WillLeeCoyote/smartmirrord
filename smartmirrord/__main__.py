@@ -3,6 +3,7 @@ import time
 
 from smartmirrord.services.power_service import PowerService
 from smartmirrord.services.ir_service import IRService
+from smartmirrord.services.motion_service import MotionService
 from smartmirrord.web.routes import web_remote
 
 
@@ -27,13 +28,18 @@ def main():
         kwargs=dict(
             host="0.0.0.0",
             port=5000,
-            debug=True,
+            debug=False,
             use_reloader=False,
             threaded=False,
         ),
         daemon=True,
     )
     web_thread.start()
+
+    def on_motion():
+        print("Motion detected!" + time.strftime("%H:%M:%S"))
+
+    motion_service = MotionService(on_motion=on_motion)
 
     print("SmartMirror daemon running:")
 
@@ -44,6 +50,7 @@ def main():
     except KeyboardInterrupt:
         print("\nShutting down SmartMirror...")
     finally:
+        motion_service.stop()
         for svc in (
                 getattr(ir_service, "ir_emulator", None),
                 getattr(power_service, "power_status", None)
