@@ -6,6 +6,10 @@ from smartmirrord.services.ir_service import IRService
 from smartmirrord.services.motion_service import MotionService
 from smartmirrord.web.routes import web_remote
 
+from smartmirrord.hardware.uart_transport import UartTransport
+from smartmirrord.services.uart_dispatcher import UartDispatcher
+from smartmirrord.services.videomute_service import VideoMuteService
+
 
 def main():
     def on_power_on():
@@ -36,8 +40,43 @@ def main():
     )
     web_thread.start()
 
+    # ------------------------------------------------------------
+    # UART + Dispatcher + VideoMute
+    # ------------------------------------------------------------
+
+    uart = UartTransport()
+    uart.start()
+
+    dispatcher = UartDispatcher(uart)
+    videomute_service = VideoMuteService(dispatcher, uart)
+
+    # ------------------------------------------------------------
+    # Motion → Unmute immediately → Auto-mute after 5s
+    # ------------------------------------------------------------
+
+    mute_timer = None
+    mute_timer_lock = threading.Lock()
+
+    def schedule_mute():
+        nonlocal mute_timer
+
+        def do_mute():
+            print("Auto-muting after inactivity")
+            videomute_service.mute()
+
+        with mute_timer_lock:
+            if mute_timer:
+                mute_timer.cancel()
+
+            mute_timer = threading.Timer(5.0, do_mute)
+            mute_timer.daemon = True
+            mute_timer.start()
+
     def on_motion():
-        print("Motion detected!" + time.strftime("%H:%M:%S"))
+        print("Motion detected! " + time.strftime("%H:%M:%S"))
+
+        videomute_service.unmute()
+        schedule_mute()
 
     motion_service = MotionService(on_motion=on_motion)
 
@@ -51,13 +90,22 @@ def main():
         print("\nShutting down SmartMirror...")
     finally:
         motion_service.stop()
+
+        with mute_timer_lock:
+            if mute_timer:
+                mute_timer.cancel()
+
+        uart.stop()
+
         for svc in (
-                getattr(ir_service, "ir_emulator", None),
-                getattr(power_service, "power_status", None)
+            getattr(ir_service, "ir_emulator", None),
+            getattr(power_service, "power_status", None),
         ):
             if svc:
                 svc.close()
+
         print("Cleanup complete.")
+
 
 if __name__ == "__main__":
     main()
