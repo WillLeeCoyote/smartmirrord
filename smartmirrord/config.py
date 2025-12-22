@@ -1,6 +1,13 @@
 import serial
 
-DEBUG_MODE = True
+# Logging
+LOG_LEVEL = "INFO"        # DEBUG, INFO, WARNING, ERROR
+LOG_TO_CONSOLE = True
+LOG_TO_FILE = True
+LOG_FILE_PATH = "../log/smartmirrord.log"
+
+# Fine-grained control
+UART_DEBUG = False
 
 # Hardware config
 GPIO_CHIP_PATH = "/dev/gpiochip0"
