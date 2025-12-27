@@ -21,6 +21,10 @@ class PowerService:
 
         self._power_gpio = PowerStatus(on_change=self._handle_power_change)
 
+        # Read current GPIO level once and start stability timer.
+        initial_state = self._power_gpio.read()
+        self._handle_power_change(initial_state)
+
     def _handle_power_change(self, is_on: bool):
         with self._lock:
             self._last_gpio_value = is_on
