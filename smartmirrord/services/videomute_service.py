@@ -1,10 +1,12 @@
 import logging
+import threading
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 class VideoMuteService:
+    TRANSITION_TIMEOUT = 3
 
     def __init__(self, dispatcher, uart):
         self._uart = uart
@@ -13,6 +15,11 @@ class VideoMuteService:
         self._backlight_on: Optional[bool] = None
 
         self._desired_muted: Optional[bool] = None
+
+        # Transition tracking
+        self._transition_active = False
+        self._converged_event = threading.Event()
+        self._transition_timer: Optional[threading.Timer] = None
 
         dispatcher.register_handler(self)
 
@@ -25,8 +32,10 @@ class VideoMuteService:
 
         if self._is_currently_muted():
             logger.debug("Already muted; no action needed")
+            self._converged_event.set()
             return
 
+        self._start_transition()
         self._apply_mute_sequence()
 
     def unmute(self) -> None:
@@ -36,14 +45,26 @@ class VideoMuteService:
 
         if self._is_currently_unmuted():
             logger.debug("Already unmuted; no action needed")
+            self._converged_event.set()
             return
 
+        self._start_transition()
         self._apply_unmute_sequence()
 
     def is_muted(self) -> bool:
         return bool(
             self._panel_muted is True and self._backlight_on is False
         )
+
+    def is_transitioning(self) -> bool:
+        return self._transition_active
+
+    def wait_for_convergence(self, timeout: Optional[float] = None) -> bool:
+        """
+        Blocks until desired state is reached or timeout expires.
+        Returns True if converged, False if timed out.
+        """
+        return self._converged_event.wait(timeout)
 
     def _is_currently_muted(self) -> bool:
         return (
@@ -56,6 +77,51 @@ class VideoMuteService:
             self._panel_muted is False
             and self._backlight_on is True
         )
+
+    def _start_transition(self) -> None:
+        self._transition_active = True
+        self._converged_event.clear()
+
+        if self._transition_timer:
+            self._transition_timer.cancel()
+
+        self._transition_timer = threading.Timer(
+            self.TRANSITION_TIMEOUT,
+            self._on_transition_timeout,
+        )
+        self._transition_timer.daemon = True
+        self._transition_timer.start()
+
+        logger.debug(
+            "Transition started (desired_muted=%s)", self._desired_muted
+        )
+
+    def _complete_transition(self) -> None:
+        self._transition_active = False
+        self._converged_event.set()
+
+        if self._transition_timer:
+            self._transition_timer.cancel()
+            self._transition_timer = None
+
+        logger.info(
+            "VideoMuteService converged: panel_muted=%s backlight_on=%s",
+            self._panel_muted,
+            self._backlight_on,
+        )
+
+    def _on_transition_timeout(self) -> None:
+        logger.error(
+            "VideoMuteService transition timeout "
+            "(desired_muted=%s panel_muted=%s backlight_on=%s)",
+            self._desired_muted,
+            self._panel_muted,
+            self._backlight_on,
+        )
+
+        self._transition_active = False
+        self._desired_muted = None
+        self._converged_event.set()
 
     def _apply_mute_sequence(self) -> None:
         logger.debug(
@@ -118,6 +184,22 @@ class VideoMuteService:
 
         if self._desired_muted and self._is_currently_muted():
             logger.debug("Desired mute state achieved")
+            self._complete_transition()
 
         elif not self._desired_muted and self._is_currently_unmuted():
             logger.debug("Desired unmute state achieved")
+            self._complete_transition()
+
+    def on_power_off(self) -> None:
+        logger.warning("Power off detected; resetting VideoMute state")
+
+        self._panel_muted = None
+        self._backlight_on = None
+        self._desired_muted = None
+        self._transition_active = False
+
+        if self._transition_timer:
+            self._transition_timer.cancel()
+            self._transition_timer = None
+
+        self._converged_event.clear()
