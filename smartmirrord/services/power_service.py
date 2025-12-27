@@ -1,23 +1,18 @@
 import threading
 import logging
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 from smartmirrord.hardware.power_status import PowerStatus
 
 log = logging.getLogger(__name__)
 
-
 class PowerService:
     STABILITY_WINDOW = 1.2  # seconds required to consider stable
 
-    def __init__(
-            self,
-            on_power_on: Optional[Callable[[], None]] = None,
-            on_power_off: Optional[Callable[[], None]] = None,
-    ):
-        self._is_on: bool | None = None
-        self.on_power_on = on_power_on
-        self.on_power_off = on_power_off
+    def __init__(self):
+        self._on_power_on_handlers: List[Callable[[], None]] = []
+        self._on_power_off_handlers: List[Callable[[], None]] = []
 
+        self._is_on: bool | None = None
         self._last_gpio_value: bool | None = None
         self._stability_timer: Optional[threading.Timer] = None
         self._lock = threading.Lock()
@@ -72,13 +67,35 @@ class PowerService:
             "ON" if stable_value else "OFF",
         )
 
-        try:
-            if stable_value and self.on_power_on:
-                self.on_power_on()
-            elif not stable_value and self.on_power_off:
-                self.on_power_off()
-        except Exception:
-            log.exception("Exception in power state callback")
+        # Emit the appropriate events based on the power state.
+        if stable_value:
+            self._emit_power_on()
+        else:
+            self._emit_power_off()
+
+    def _emit_power_on(self):
+        for handler in self._on_power_on_handlers:
+            try:
+                handler()
+            except Exception:
+                log.exception("Exception in on_power_on handler")
+
+    def _emit_power_off(self):
+        for handler in self._on_power_off_handlers:
+            try:
+                handler()
+            except Exception:
+                log.exception("Exception in on_power_off handler")
+
+    def register_on_power_on(self, handler: Callable[[], None]):
+        with self._lock:
+            self._on_power_on_handlers.append(handler)
+            log.info("Registered new on_power_on handler.")
+
+    def register_on_power_off(self, handler: Callable[[], None]):
+        with self._lock:
+            self._on_power_off_handlers.append(handler)
+            log.info("Registered new on_power_off handler.")
 
     def is_power_on(self) -> bool:
         with self._lock:
