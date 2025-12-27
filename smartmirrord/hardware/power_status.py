@@ -38,6 +38,9 @@ class PowerStatus:
             self._thread = threading.Thread(target=self._event_loop, daemon=True)
             self._thread.start()
 
+    def read(self) -> bool:
+        return self._read_power_state()
+
     def _read_power_state(self) -> bool:
         """Return True if power is ON (LED LOW)."""
         return self.request.get_values()[0] == Value.INACTIVE
