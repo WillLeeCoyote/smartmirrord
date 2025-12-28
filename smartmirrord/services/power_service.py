@@ -13,7 +13,6 @@ class PowerService:
         self._on_power_off_handlers: List[Callable[[], None]] = []
 
         self._is_on: bool | None = None
-        self._last_gpio_value: bool | None = None
         self._stability_timer: Optional[threading.Timer] = None
         self._lock = threading.Lock()
 
@@ -29,8 +28,6 @@ class PowerService:
 
     def _start_stability_timer(self, is_on: bool):
         with self._lock:
-            self._last_gpio_value = is_on
-
             if self._stability_timer:
                 self._stability_timer.cancel()
                 log.debug("Cancelled previous stability timer")
