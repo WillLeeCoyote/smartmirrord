@@ -176,14 +176,8 @@ class VideoMuteService:
 
     def on_power_on(self) -> None:
         logger.info("Power on detected; assuming unmuted baseline")
-        # ToDo: The known baseline is good if the panel did just power on, but NOT
-        #  if the service started and the panel was already on. I think we can handle this by checking if the power_on
-        #  is set to NONE in the constructor and then setting it to True here.
-        #  Then, if the power_on is still None, we can assume the panel was already on and force a mute.
 
         self._power_on = True
-        self._panel_muted = False
-        self._backlight_on = True
         self._transition_active = False
         self._converged_event.clear()
 
