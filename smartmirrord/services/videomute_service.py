@@ -175,16 +175,13 @@ class VideoMuteService:
             self._complete_transition()
 
     def on_power_on(self) -> None:
-        logger.info("Power on detected; assuming unmuted baseline")
+        logger.info("Power on detected; Applying mute sequence")
 
         self._power_on = True
-        self._transition_active = False
-        self._converged_event.clear()
+        self._desired_muted = True
 
-        if self._desired_muted is True:
-            logger.info("Desired mute pending; applying after power on")
-            self._start_transition()
-            self._apply_mute_sequence()
+        self._start_transition()
+        self._apply_mute_sequence()
 
     def on_power_off(self) -> None:
         logger.warning("Power off detected; invalidating VideoMute state")
@@ -193,9 +190,7 @@ class VideoMuteService:
         self._panel_muted = None
         self._backlight_on = None
         self._transition_active = False
-
-        # On the next power cycle we want to start in a muted state but also respect any changes between now and then.
-        self._desired_muted = True
+        self._desired_muted = None
 
         if self._transition_timer:
             self._transition_timer.cancel()
