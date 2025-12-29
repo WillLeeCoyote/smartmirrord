@@ -8,8 +8,10 @@ logger = logging.getLogger(__name__)
 class VideoMuteService:
     TRANSITION_TIMEOUT = 8
 
-    def __init__(self, dispatcher, uart):
+    def __init__(self, dispatcher, uart, power_service):
         self._uart = uart
+        power_service.register_on_power_on(self.on_power_on)
+        power_service.register_on_power_off(self.on_power_off)
 
         self._panel_muted: Optional[bool] = None
         self._backlight_on: Optional[bool] = None

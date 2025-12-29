@@ -1,8 +1,10 @@
 import threading
 import time
 
+from smartmirrord.logging_config import setup_logging
 from smartmirrord.services.power_service import PowerService
 from smartmirrord.services.ir_service import IRService
+from smartmirrord.services.display_availability_service import DisplayAvailabilityService
 from smartmirrord.services.motion_service import MotionService
 from smartmirrord.web.routes import web_remote
 
@@ -12,6 +14,8 @@ from smartmirrord.services.videomute_service import VideoMuteService
 
 
 def main():
+    setup_logging()
+
     def on_power_on():
         print("TV Power: ON")
 
@@ -20,10 +24,10 @@ def main():
         # ir_service.send_command("power")
         # time.sleep(12)
 
-    power_service = PowerService(
-        on_power_on=on_power_on,
-        on_power_off=on_power_off,
-    )
+    power_service = PowerService()
+    power_service.register_on_power_on(on_power_on)
+    power_service.register_on_power_off(on_power_off)
+
     ir_service = IRService()
     web_remote.config["IR_SERVICE"] = ir_service
 
@@ -40,6 +44,8 @@ def main():
     )
     web_thread.start()
 
+    display_availability_service = DisplayAvailabilityService(power_service, ir_service)
+
     # ------------------------------------------------------------
     # UART + Dispatcher + VideoMute
     # ------------------------------------------------------------
@@ -48,7 +54,7 @@ def main():
     uart.start()
 
     dispatcher = UartDispatcher(uart)
-    videomute_service = VideoMuteService(dispatcher, uart)
+    videomute_service = VideoMuteService(dispatcher, uart, power_service)
 
     # ------------------------------------------------------------
     # Motion → Unmute immediately → Auto-mute after 5s
