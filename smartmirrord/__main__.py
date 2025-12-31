@@ -15,30 +15,23 @@ from smartmirrord.services.videomute_service import VideoMuteService
 
 
 def main():
-    setup_logging()
-
-    def on_power_on():
-        print("TV Power: ON")
-
-    def on_power_off():
-        print("TV Power: OFF")
-
-    def on_motion():
-        print("Motion detected! " + time.strftime("%H:%M:%S"))
-
     schedule_json = {
         "quiet_hours": [
             {"start": "23:00", "end": "06:00"}
         ]
     }
 
+    setup_logging()
+
     # Construct core services
     power_service = PowerService()
     ir_service = IRService()
     uart = UartTransport()
     dispatcher = UartDispatcher(uart)
-    videomute_service = VideoMuteService(dispatcher, uart, power_service)
     motion_service = MotionService()
+
+    # Construct core policy services
+    videomute_service = VideoMuteService(dispatcher, uart, power_service)
     display_availability_service = DisplayAvailabilityService(power_service, ir_service)
     display_policy_service = DisplayPolicyService(videomute_service, motion_service, power_service, 15, schedule_json)
 
@@ -56,13 +49,9 @@ def main():
         daemon=True,
     )
 
-    # Register event handlers
-    power_service.register_on_power_on(on_power_on)
-    power_service.register_on_power_off(on_power_off)
-    motion_service.register_on_motion_on(on_motion)
-
     # Start core services
     ir_service.start()
+    videomute_service.start()
     display_availability_service.start()
     display_policy_service.start()
     power_service.start()
@@ -80,6 +69,7 @@ def main():
         print("\nShutting down SmartMirror...")
     finally:
         motion_service.stop()
+        videomute_service.stop()
         display_availability_service.stop()
         display_policy_service.stop()
         uart.stop()

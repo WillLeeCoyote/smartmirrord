@@ -9,9 +9,9 @@ class VideoMuteService:
     TRANSITION_TIMEOUT = 8
 
     def __init__(self, dispatcher, uart, power_service):
+        self._dispatcher = dispatcher
         self._uart = uart
-        power_service.register_on_power_on(self.on_power_on)
-        power_service.register_on_power_off(self.on_power_off)
+        self._power_service = power_service
 
         self._panel_muted: Optional[bool] = None
         self._backlight_on: Optional[bool] = None
@@ -21,12 +21,41 @@ class VideoMuteService:
         self._transition_active = False
         self._converged_event = threading.Event()
         self._transition_timer: Optional[threading.Timer] = None
+        self._running = False
 
-        dispatcher.register_handler(self)
+        logger.info("VideoMuteService constructed")
 
-        logger.info("VideoMuteService initialized (power unknown, state unknown)")
+    def start(self) -> None:
+        if self._running:
+            return
+
+        self._dispatcher.register_handler(self)
+        self._power_service.register_on_power_on(self.on_power_on)
+        self._power_service.register_on_power_off(self.on_power_off)
+
+        self._running = True
+        logger.info("VideoMuteService started")
+
+    def stop(self) -> None:
+        if not self._running:
+            return
+
+        self._running = False
+
+        if self._transition_timer:
+            self._transition_timer.cancel()
+            self._transition_timer = None
+
+        self._transition_active = False
+        self._desired_muted = None
+        self._converged_event.clear()
+
+        logger.info("VideoMuteService stopped")
 
     def mute(self) -> None:
+        if not self._running:
+            raise RuntimeError("VideoMuteService is not running")
+
         logger.info("VideoMuteService: mute() requested")
         self._desired_muted = True
 
@@ -43,6 +72,9 @@ class VideoMuteService:
         self._apply_mute_sequence()
 
     def unmute(self) -> None:
+        if not self._running:
+            raise RuntimeError("VideoMuteService is not running")
+
         logger.info("VideoMuteService: unmute() requested")
         self._desired_muted = False
 
@@ -104,6 +136,9 @@ class VideoMuteService:
         )
 
     def _on_transition_timeout(self) -> None:
+        if not self._running:
+            return
+
         logger.error(
             "VideoMute transition timeout "
             "(desired_muted=%s panel_muted=%s backlight_on=%s)",
@@ -138,12 +173,13 @@ class VideoMuteService:
 
     def can_handle(self, line: str) -> bool:
         return (
-                line.startswith("Video Mute")
-                or line.startswith("PORT_SW_INVERTER")
+            line.startswith("Video Mute")
+            or line.startswith("PORT_SW_INVERTER")
         )
 
     def handle(self, line: str) -> None:
-        logger.debug("VideoMute RX: %s", line)
+        if not self._running:
+            return
 
         prev_state = (self._panel_muted, self._backlight_on)
 
@@ -177,7 +213,10 @@ class VideoMuteService:
             self._complete_transition()
 
     def on_power_on(self) -> None:
-        logger.info("Power on detected; Applying mute sequence")
+        if not self._running:
+            return
+
+        logger.info("Power on detected; applying mute sequence")
 
         self._power_on = True
         self._desired_muted = True
@@ -186,6 +225,9 @@ class VideoMuteService:
         self._apply_mute_sequence()
 
     def on_power_off(self) -> None:
+        if not self._running:
+            return
+
         logger.warning("Power off detected; invalidating VideoMute state")
 
         self._power_on = False
