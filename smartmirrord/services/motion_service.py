@@ -22,7 +22,7 @@ class MotionService:
 
         self._lock = threading.Lock()
 
-    def add_motion_handler(self, handler: Callable[[], None]) -> None:
+    def register_on_motion_on(self, handler: Callable[[], None]) -> None:
         with self._lock:
             self._handlers.append(handler)
 
