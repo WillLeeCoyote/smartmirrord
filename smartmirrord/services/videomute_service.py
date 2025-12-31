@@ -216,13 +216,9 @@ class VideoMuteService:
         if not self._running:
             return
 
-        logger.info("Power on detected; applying mute sequence")
+        logger.info("Power on detected")
 
         self._power_on = True
-        self._desired_muted = True
-
-        self._start_transition()
-        self._apply_mute_sequence()
 
     def on_power_off(self) -> None:
         if not self._running:
