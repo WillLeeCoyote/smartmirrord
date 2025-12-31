@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import RotatingFileHandler
 
-from config import (
+from smartmirrord.config import (
     LOG_LEVEL,
     LOG_TO_CONSOLE,
     LOG_TO_FILE,
