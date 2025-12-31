@@ -20,12 +20,43 @@ class DisplayAvailabilityService:
         self._power_off_delay_timer: Optional[threading.Timer] = None
         self._lock = threading.Lock()
 
-        power_service.register_on_power_on(self._on_power_on)
-        power_service.register_on_power_off(self._on_power_off)
+        self._running = False
 
-        logger.info("DisplayAvailabilityService initialized")
+        logger.info("DisplayAvailabilityService constructed")
+
+    def start(self):
+        if self._running:
+            return
+
+        self._power_service.register_on_power_on(self._on_power_on)
+        self._power_service.register_on_power_off(self._on_power_off)
+
+        self._running = True
+        logger.info("DisplayAvailabilityService started")
+
+    def stop(self):
+        if not self._running:
+            return
+
+        with self._lock:
+            self._running = False
+            self._waiting_for_power_on = False
+            self._power_on_event.set()
+
+            if self._retry_timer:
+                self._retry_timer.cancel()
+                self._retry_timer = None
+
+            if self._power_off_delay_timer:
+                self._power_off_delay_timer.cancel()
+                self._power_off_delay_timer = None
+
+        logger.info("DisplayAvailabilityService stopped")
 
     def _on_power_on(self) -> None:
+        if not self._running:
+            return
+
         with self._lock:
             self._waiting_for_power_on = False
             self._power_on_event.set()
@@ -37,6 +68,9 @@ class DisplayAvailabilityService:
         logger.info("Display power confirmed ON")
 
     def _on_power_off(self) -> None:
+        if not self._running:
+            return
+
         logger.warning("Display power OFF detected; asserting power ON")
 
         with self._lock:
@@ -47,6 +81,9 @@ class DisplayAvailabilityService:
         self._start_power_off_delay_timer()
 
     def _start_power_off_delay_timer(self) -> None:
+        if not self._running:
+            return
+
         if self._power_off_delay_timer:
             self._power_off_delay_timer.cancel()
 
@@ -58,6 +95,9 @@ class DisplayAvailabilityService:
         self._power_off_delay_timer.start()
 
     def _send_power_command(self) -> None:
+        if not self._running:
+            return
+
         try:
             self._ir_service.send_command("power")
             logger.debug("IR power command sent")
@@ -67,6 +107,9 @@ class DisplayAvailabilityService:
         self._start_power_on_timeout()
 
     def _start_power_on_timeout(self) -> None:
+        if not self._running:
+            return
+
         if self._retry_timer:
             self._retry_timer.cancel()
 
@@ -79,7 +122,7 @@ class DisplayAvailabilityService:
 
     def _on_power_on_timeout(self) -> None:
         with self._lock:
-            if not self._waiting_for_power_on:
+            if not self._running or not self._waiting_for_power_on:
                 return
 
         logger.error(

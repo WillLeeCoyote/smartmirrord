@@ -9,6 +9,7 @@ from .ir_timing import (
     STOP_LOW
 )
 
+
 def us_to_seconds(us: int) -> float:
     return us / 1_000_000.0
 
@@ -16,7 +17,12 @@ def us_to_seconds(us: int) -> float:
 class IREmulator:
     def __init__(self, pin: int = GPIO_IR_INPUT_PIN):
         self.pin = pin
-        self._closed = False
+        self._running = False
+        self.request = None
+
+    def start(self):
+        if self._running:
+            return
 
         settings = gpiod.LineSettings()
         settings.direction = Direction.OUTPUT
@@ -29,7 +35,21 @@ class IREmulator:
                 output_values={self.pin: Value.ACTIVE},
             )
         except Exception as e:
-            raise RuntimeError(f"Failed to request GPIO line {pin}: {e}") from e
+            raise RuntimeError(f"Failed to request GPIO line {self.pin}: {e}") from e
+
+        self._running = True
+
+    def stop(self):
+        if not self._running:
+            return
+
+        try:
+            if self.request:
+                self.request.set_value(self.pin, Value.ACTIVE)
+                self.request.release()
+        finally:
+            self.request = None
+            self._running = False
 
     def generate_pulses(self, command_value: int):
         pulses = [(0, LEADER_LOW), (1, LEADER_HIGH)]
@@ -45,8 +65,8 @@ class IREmulator:
         return pulses
 
     def send_raw(self, pulses):
-        if self._closed:
-            raise RuntimeError("Cannot send on closed IREmulator")
+        if not self._running:
+            raise RuntimeError("IREmulator is not running")
 
         for level, duration in pulses:
             self.request.set_value(self.pin, Value.ACTIVE if level else Value.INACTIVE)
@@ -58,6 +78,9 @@ class IREmulator:
         self.request.set_value(self.pin, Value.ACTIVE)
 
     def send(self, command: str):
+        if not self._running:
+            raise RuntimeError("IREmulator is not running")
+
         command = command.lower()
         if command not in CODES:
             raise ValueError(f"Unknown IR command: {command}")
@@ -67,11 +90,3 @@ class IREmulator:
         for _ in range(5):
             self.send_raw(pulses)
             time.sleep(0.005)
-
-    def close(self):
-        if not self._closed:
-            try:
-                self.request.set_value(self.pin, Value.ACTIVE)
-                self.request.release()
-            finally:
-                self._closed = True
