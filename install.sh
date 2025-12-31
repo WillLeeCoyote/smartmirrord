@@ -77,6 +77,10 @@ chmod +x "$INSTALL_DIR/deploy.sh" 2>/dev/null || true
 chown -R $USER:$GROUP $INSTALL_DIR
 echo -e "${GREEN}Application files copied${NC}"
 
+if command -v git >/dev/null 2>&1; then
+    git config --system --add safe.directory "$INSTALL_DIR" || true
+fi
+
 # Install system dependencies
 echo -e "${YELLOW}Installing system dependencies...${NC}"
 apt update
