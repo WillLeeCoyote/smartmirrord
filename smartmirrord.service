@@ -1,0 +1,31 @@
+[Unit]
+Description=SmartMirror Daemon - Hardware control and state management
+After=network.target
+
+[Service]
+Type=simple
+User=smartmirror
+Group=smartmirror
+WorkingDirectory=/opt/smartmirrord
+EnvironmentFile=-/opt/smartmirrord/.env
+ExecStart=/opt/smartmirrord/venv/bin/python -m smartmirrord
+
+# Restart policy
+Restart=on-failure
+RestartSec=5s
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/smartmirrord /opt/smartmirrord/log
+DeviceAllow=/dev/gpiochip0 rw
+DeviceAllow=/dev/serial0 rw
+DeviceAllow=/dev/video0 rw
+
+# Resource limits
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target
