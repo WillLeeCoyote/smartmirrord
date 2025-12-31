@@ -47,7 +47,7 @@ class PowerStatus:
 
     def _event_loop(self):
         while not self._stop_event.is_set():
-            if self.request.wait_edge_events(timeout=None):
+            if self.request.wait_edge_events(timeout=0.5):
                 for _ in self.request.read_edge_events():
                     now = time.monotonic()
                     if now - self._last_event >= self.bouncetime:
@@ -58,5 +58,5 @@ class PowerStatus:
     def close(self):
         self._stop_event.set()
         if hasattr(self, "_thread"):
-            self._thread.join()
+            self._thread.join(timeout=2.0)
         self.request.release()
