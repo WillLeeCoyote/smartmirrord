@@ -6,6 +6,7 @@ from smartmirrord.services.power_service import PowerService
 from smartmirrord.services.ir_service import IRService
 from smartmirrord.services.display_availability_service import DisplayAvailabilityService
 from smartmirrord.services.motion_service import MotionService
+from smartmirrord.services.display_policy_service import DisplayPolicyService
 from smartmirrord.web.routes import web_remote
 
 from smartmirrord.hardware.uart_transport import UartTransport
@@ -21,14 +22,26 @@ def main():
 
     def on_power_off():
         print("TV Power: OFF")
-        # ir_service.send_command("power")
-        # time.sleep(12)
 
+    def on_motion():
+        print("Motion detected! " + time.strftime("%H:%M:%S"))
+
+    schedule_json = {
+        "quiet_hours": [
+            {"start": "23:00", "end": "06:00"}
+        ]
+    }
+
+    # Construct core services
     power_service = PowerService()
-    power_service.register_on_power_on(on_power_on)
-    power_service.register_on_power_off(on_power_off)
-
     ir_service = IRService()
+    uart = UartTransport()
+    dispatcher = UartDispatcher(uart)
+    videomute_service = VideoMuteService(dispatcher, uart, power_service)
+    motion_service = MotionService()
+    display_availability_service = DisplayAvailabilityService(power_service, ir_service)
+    display_policy_service = DisplayPolicyService(videomute_service, motion_service, power_service, 15, schedule_json)
+
     web_remote.config["IR_SERVICE"] = ir_service
 
     web_thread = threading.Thread(
@@ -42,49 +55,20 @@ def main():
         ),
         daemon=True,
     )
-    web_thread.start()
 
-    display_availability_service = DisplayAvailabilityService(power_service, ir_service)
+    # Register event handlers
+    power_service.register_on_power_on(on_power_on)
+    power_service.register_on_power_off(on_power_off)
+    motion_service.register_on_motion_on(on_motion)
 
-    # ------------------------------------------------------------
-    # UART + Dispatcher + VideoMute
-    # ------------------------------------------------------------
-
-    uart = UartTransport()
+    # Start core services
+    ir_service.start()
+    display_availability_service.start()
+    display_policy_service.start()
+    power_service.start()
     uart.start()
-
-    dispatcher = UartDispatcher(uart)
-    videomute_service = VideoMuteService(dispatcher, uart, power_service)
-
-    # ------------------------------------------------------------
-    # Motion → Unmute immediately → Auto-mute after 5s
-    # ------------------------------------------------------------
-
-    mute_timer = None
-    mute_timer_lock = threading.Lock()
-
-    def schedule_mute():
-        nonlocal mute_timer
-
-        def do_mute():
-            print("Auto-muting after inactivity")
-            videomute_service.mute()
-
-        with mute_timer_lock:
-            if mute_timer:
-                mute_timer.cancel()
-
-            mute_timer = threading.Timer(5.0, do_mute)
-            mute_timer.daemon = True
-            mute_timer.start()
-
-    def on_motion():
-        print("Motion detected! " + time.strftime("%H:%M:%S"))
-
-        videomute_service.unmute()
-        schedule_mute()
-
-    motion_service = MotionService(on_motion=on_motion)
+    motion_service.start()
+    web_thread.start()
 
     print("SmartMirror daemon running:")
 
@@ -96,19 +80,11 @@ def main():
         print("\nShutting down SmartMirror...")
     finally:
         motion_service.stop()
-
-        with mute_timer_lock:
-            if mute_timer:
-                mute_timer.cancel()
-
+        display_availability_service.stop()
+        display_policy_service.stop()
         uart.stop()
-
-        for svc in (
-            getattr(ir_service, "ir_emulator", None),
-            getattr(power_service, "power_status", None),
-        ):
-            if svc:
-                svc.close()
+        power_service.stop()
+        ir_service.stop()
 
         print("Cleanup complete.")
 
