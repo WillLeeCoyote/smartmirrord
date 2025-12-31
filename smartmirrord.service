@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 User=smartmirror
 Group=smartmirror
+SupplementaryGroups=video render gpio dialout
 WorkingDirectory=/opt/smartmirrord
 EnvironmentFile=-/opt/smartmirrord/.env
 ExecStart=/opt/smartmirrord/venv/bin/python -m smartmirrord
@@ -20,9 +21,6 @@ PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/var/log/smartmirrord /opt/smartmirrord/log
-DeviceAllow=/dev/gpiochip0 rw
-DeviceAllow=/dev/serial0 rw
-DeviceAllow=/dev/video0 rw
 
 # Resource limits
 LimitNOFILE=1024
