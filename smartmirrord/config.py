@@ -32,3 +32,11 @@ UART_TIMEOUT = .1
 UART_READ_CHUNK_SIZE = 1024
 UART_WRITE_EOL = '\n'
 
+# Policy level config
+SCHEDULE_JSON = {
+    "quiet_hours": [
+        {"start": "23:00", "end": "06:00"}
+    ]
+}
+
+DISPLAY_POLICY_TIMEOUT = 15

@@ -1,42 +1,77 @@
 import threading
-import time
+import logging
+import signal
 
 from smartmirrord.logging_config import setup_logging
+from smartmirrord.config import SCHEDULE_JSON, DISPLAY_POLICY_TIMEOUT
 from smartmirrord.services.power_service import PowerService
 from smartmirrord.services.ir_service import IRService
 from smartmirrord.services.display_availability_service import DisplayAvailabilityService
 from smartmirrord.services.motion_service import MotionService
 from smartmirrord.services.display_policy_service import DisplayPolicyService
 from smartmirrord.web.routes import web_remote
-
 from smartmirrord.hardware.uart_transport import UartTransport
 from smartmirrord.services.uart_dispatcher import UartDispatcher
 from smartmirrord.services.videomute_service import VideoMuteService
 
+logger = logging.getLogger(__name__)
 
-def main():
-    schedule_json = {
-        "quiet_hours": [
-            {"start": "23:00", "end": "06:00"}
-        ]
-    }
 
-    setup_logging()
+def wait_for_shutdown(stop_event: threading.Event) -> None:
+    while not stop_event.is_set():
+        stop_event.wait(timeout=60)
 
-    # Construct core services
+
+def initialize_services(schedule_json):
+    # Core services
     power_service = PowerService()
     ir_service = IRService()
     uart = UartTransport()
     dispatcher = UartDispatcher(uart)
     motion_service = MotionService()
 
-    # Construct core policy services
+    # Core policy services
     videomute_service = VideoMuteService(dispatcher, uart, power_service)
     display_availability_service = DisplayAvailabilityService(power_service, ir_service)
-    display_policy_service = DisplayPolicyService(videomute_service, motion_service, power_service, 15, schedule_json)
+    display_policy_service = DisplayPolicyService(
+        videomute_service,
+        motion_service,
+        power_service,
+        DISPLAY_POLICY_TIMEOUT,
+        schedule_json,
+    )
 
-    web_remote.config["IR_SERVICE"] = ir_service
+    return {
+        "power_service": power_service,
+        "ir_service": ir_service,
+        "uart": uart,
+        "dispatcher": dispatcher,
+        "motion_service": motion_service,
+        "videomute_service": videomute_service,
+        "display_availability_service": display_availability_service,
+        "display_policy_service": display_policy_service,
+    }
 
+
+def start_services(services):
+    for service in services.values():
+        logger.info(f"Starting {service.__class__.__name__}")
+        service.start()
+
+
+def stop_services(services):
+    for service in services.values():
+        logger.info(f"Stopping {service.__class__.__name__}")
+        service.stop()
+
+
+def main():
+    setup_logging()
+
+    services = initialize_services(SCHEDULE_JSON)
+    start_services(services)
+
+    web_remote.config["IR_SERVICE"] = services["ir_service"]
     web_thread = threading.Thread(
         target=web_remote.run,
         kwargs=dict(
@@ -48,35 +83,29 @@ def main():
         ),
         daemon=True,
     )
-
-    # Start core services
-    ir_service.start()
-    videomute_service.start()
-    display_availability_service.start()
-    display_policy_service.start()
-    power_service.start()
-    uart.start()
-    motion_service.start()
     web_thread.start()
 
-    print("SmartMirror daemon running:")
-
     stop_event = threading.Event()
-    try:
-        while not stop_event.is_set():
-            stop_event.wait(timeout=60)
-    except KeyboardInterrupt:
-        print("\nShutting down SmartMirror...")
-    finally:
-        motion_service.stop()
-        videomute_service.stop()
-        display_availability_service.stop()
-        display_policy_service.stop()
-        uart.stop()
-        power_service.stop()
-        ir_service.stop()
 
-        print("Cleanup complete.")
+    def handle_shutdown_signal(signum=None, frame=None):
+        if stop_event.is_set():
+            return
+        logger.info("Shutdown signal received. Stopping services...")
+        try:
+            stop_services(services)
+            logger.info("Cleanup complete.")
+        finally:
+            stop_event.set()
+
+    signal.signal(signal.SIGTERM, handle_shutdown_signal)
+    signal.signal(signal.SIGINT, handle_shutdown_signal)
+
+    logger.info("SmartMirror daemon running.")
+
+    try:
+        wait_for_shutdown(stop_event)
+    finally:
+        handle_shutdown_signal()
 
 
 if __name__ == "__main__":
