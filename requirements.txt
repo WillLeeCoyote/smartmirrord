@@ -1,5 +1,10 @@
+# APT-based dependencies (install via apt, not pip):
+# - picamera2 (via: sudo apt install -y python3-picamera2)
+#
+# Recommended: Install picamera2 via apt to ensure compatibility with libcamera.
+# See: https://github.com/raspberrypi/picamera2
+
 Flask>=3.0.0
 pyserial>=3.5
-picamera2>=0.3.0
 opencv-python>=4.8.0
 numpy>=1.24.0

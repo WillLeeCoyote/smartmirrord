@@ -63,9 +63,15 @@ fi
 chown -R $USER:$GROUP $INSTALL_DIR
 echo -e "${GREEN}Application files copied${NC}"
 
-# Create Python virtual environment
+# Install system dependencies
+echo -e "${YELLOW}Installing system dependencies...${NC}"
+apt update
+apt install -y python3-picamera2 python3-venv
+echo -e "${GREEN}System dependencies installed${NC}"
+
+# Create Python virtual environment with system packages
 echo -e "${YELLOW}Creating Python virtual environment...${NC}"
-sudo -u $USER python3 -m venv $INSTALL_DIR/venv
+sudo -u $USER python3 -m venv --system-site-packages $INSTALL_DIR/venv
 echo -e "${GREEN}Virtual environment created${NC}"
 
 # Install Python dependencies
