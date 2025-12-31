@@ -46,20 +46,34 @@ echo -e "${GREEN}Directories created${NC}"
 # Copy application files
 echo -e "${YELLOW}Copying application files...${NC}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cp -r $SCRIPT_DIR/smartmirrord $INSTALL_DIR/
-cp $SCRIPT_DIR/requirements.txt $INSTALL_DIR/
-cp $SCRIPT_DIR/deploy.sh $INSTALL_DIR/
-chmod +x $INSTALL_DIR/deploy.sh
 
-# Copy .env if it exists, otherwise copy .env.example
-if [ -f "$SCRIPT_DIR/.env" ]; then
-    cp $SCRIPT_DIR/.env $INSTALL_DIR/
-    echo -e "${GREEN}.env file copied${NC}"
-elif [ -f "$SCRIPT_DIR/.env.example" ]; then
-    cp $SCRIPT_DIR/.env.example $INSTALL_DIR/.env
-    echo -e "${YELLOW}.env.example copied to .env - please edit $INSTALL_DIR/.env${NC}"
+# Preserve an existing .env (don't overwrite local config on reinstall/upgrade)
+ENV_BACKUP=""
+if [ -f "$INSTALL_DIR/.env" ]; then
+    ENV_BACKUP="$(mktemp)"
+    cp -a "$INSTALL_DIR/.env" "$ENV_BACKUP"
 fi
 
+# Copy *everything* (including dotfiles like .git) so deploy/update mechanisms work
+cp -a "$SCRIPT_DIR/." "$INSTALL_DIR/"
+
+# Restore preserved .env if it existed
+if [ -n "$ENV_BACKUP" ] && [ -f "$ENV_BACKUP" ]; then
+    cp -a "$ENV_BACKUP" "$INSTALL_DIR/.env"
+    rm -f "$ENV_BACKUP"
+    echo -e "${GREEN}.env preserved${NC}"
+else
+    # Copy .env if it exists, otherwise copy .env.example
+    if [ -f "$SCRIPT_DIR/.env" ]; then
+        cp -a "$SCRIPT_DIR/.env" "$INSTALL_DIR/.env"
+        echo -e "${GREEN}.env file copied${NC}"
+    elif [ -f "$SCRIPT_DIR/.env.example" ]; then
+        cp -a "$SCRIPT_DIR/.env.example" "$INSTALL_DIR/.env"
+        echo -e "${YELLOW}.env.example copied to .env - please edit $INSTALL_DIR/.env${NC}"
+    fi
+fi
+
+chmod +x "$INSTALL_DIR/deploy.sh" 2>/dev/null || true
 chown -R $USER:$GROUP $INSTALL_DIR
 echo -e "${GREEN}Application files copied${NC}"
 
