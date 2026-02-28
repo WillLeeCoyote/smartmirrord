@@ -12,8 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class MotionService:
-    def __init__(self):
-        self.camera = Camera()
+    def __init__(self, camera: Optional[Camera] = None):
+        self.camera = camera if camera is not None else Camera()
 
         self._handlers: List[Callable[[], None]] = []
 

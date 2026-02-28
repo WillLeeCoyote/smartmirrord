@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from smartmirrord.hardware.ir_emulator import IREmulator
 from smartmirrord.hardware.ir_codes import CODES
 
@@ -6,8 +7,8 @@ log = logging.getLogger(__name__)
 
 
 class IRService:
-    def __init__(self):
-        self._ir_emulator = IREmulator()
+    def __init__(self, ir_emulator: Optional[IREmulator] = None):
+        self._ir_emulator = ir_emulator if ir_emulator is not None else IREmulator()
         self._commands = list(CODES.keys())
         self._running = False
 

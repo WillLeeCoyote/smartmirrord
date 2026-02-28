@@ -15,8 +15,9 @@ def us_to_seconds(us: int) -> float:
 
 
 class IREmulator:
-    def __init__(self, pin: int = GPIO_IR_INPUT_PIN):
+    def __init__(self, pin: int = GPIO_IR_INPUT_PIN, chip_path: str = GPIO_CHIP_PATH):
         self.pin = pin
+        self._chip_path = chip_path
         self._running = False
         self.request = None
 
@@ -29,7 +30,7 @@ class IREmulator:
 
         try:
             self.request = gpiod.request_lines(
-                path=GPIO_CHIP_PATH,
+                path=self._chip_path,
                 config={self.pin: settings},
                 consumer="smartmirrord",
                 output_values={self.pin: Value.ACTIVE},

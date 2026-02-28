@@ -4,6 +4,9 @@ import signal
 
 from smartmirrord.logging_config import setup_logging
 from smartmirrord.config import SCHEDULE_JSON, DISPLAY_POLICY_TIMEOUT
+from smartmirrord.hardware.camera import Camera
+from smartmirrord.hardware.ir_emulator import IREmulator
+from smartmirrord.hardware.power_status import PowerStatus
 from smartmirrord.services.power_service import PowerService
 from smartmirrord.services.ir_service import IRService
 from smartmirrord.services.display_availability_service import DisplayAvailabilityService
@@ -23,12 +26,16 @@ def wait_for_shutdown(stop_event: threading.Event) -> None:
 
 
 def initialize_services(schedule_json):
+    # Hardware
+    ir_emulator = IREmulator()
+    camera = Camera()
+
     # Core services
-    power_service = PowerService()
-    ir_service = IRService()
+    power_service = PowerService(power_status_factory=PowerStatus)
+    ir_service = IRService(ir_emulator=ir_emulator)
     uart = UartTransport()
     dispatcher = UartDispatcher(uart)
-    motion_service = MotionService()
+    motion_service = MotionService(camera=camera)
 
     # Core policy services
     videomute_service = VideoMuteService(dispatcher, uart, power_service)

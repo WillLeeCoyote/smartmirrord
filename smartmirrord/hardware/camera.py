@@ -4,8 +4,14 @@ import time
 
 
 class Camera:
-    def __init__(self):
+    def __init__(
+        self,
+        width: int = config.CAMERA_WIDTH,
+        height: int = config.CAMERA_HEIGHT,
+    ):
         self.picam2 = None
+        self._width = width
+        self._height = height
 
     def start(self):
         try:
@@ -13,7 +19,7 @@ class Camera:
 
             camera_config = self.picam2.create_video_configuration(
                 main={
-                    "size": (config.CAMERA_WIDTH, config.CAMERA_HEIGHT),
+                    "size": (self._width, self._height),
                     "format": "RGB888",
                 }
             )
