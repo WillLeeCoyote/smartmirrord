@@ -4,15 +4,8 @@ import signal
 
 from smartmirrord.logging_config import setup_logging
 from smartmirrord.config import SCHEDULE_JSON, DISPLAY_POLICY_TIMEOUT
-from smartmirrord.services.power_service import PowerService
-from smartmirrord.services.ir_service import IRService
-from smartmirrord.services.display_availability_service import DisplayAvailabilityService
-from smartmirrord.services.motion_service import MotionService
-from smartmirrord.services.display_policy_service import DisplayPolicyService
+from smartmirrord.container import Container
 from smartmirrord.web.routes import web_remote
-from smartmirrord.hardware.uart_transport import UartTransport
-from smartmirrord.services.uart_dispatcher import UartDispatcher
-from smartmirrord.services.videomute_service import VideoMuteService
 
 logger = logging.getLogger(__name__)
 
@@ -22,45 +15,16 @@ def wait_for_shutdown(stop_event: threading.Event) -> None:
         stop_event.wait(timeout=60)
 
 
-def initialize_services(schedule_json):
-    # Core services
-    power_service = PowerService()
-    ir_service = IRService()
-    uart = UartTransport()
-    dispatcher = UartDispatcher(uart)
-    motion_service = MotionService()
-
-    # Core policy services
-    videomute_service = VideoMuteService(dispatcher, uart, power_service)
-    display_availability_service = DisplayAvailabilityService(power_service, ir_service)
-    display_policy_service = DisplayPolicyService(
-        videomute_service,
-        motion_service,
-        power_service,
-        DISPLAY_POLICY_TIMEOUT,
-        schedule_json,
-    )
-
-    return {
-        "power_service": power_service,
-        "ir_service": ir_service,
-        "uart": uart,
-        "dispatcher": dispatcher,
-        "motion_service": motion_service,
-        "videomute_service": videomute_service,
-        "display_availability_service": display_availability_service,
-        "display_policy_service": display_policy_service,
-    }
-
-
-def start_services(services):
-    for service in services.values():
+def start_services(container: Container) -> None:
+    """Start all services in dependency order."""
+    for service in container.startup_order():
         logger.info(f"Starting {service.__class__.__name__}")
         service.start()
 
 
-def stop_services(services):
-    for service in services.values():
+def stop_services(container: Container) -> None:
+    """Stop all services in reverse dependency order."""
+    for service in reversed(container.startup_order()):
         logger.info(f"Stopping {service.__class__.__name__}")
         service.stop()
 
@@ -68,10 +32,17 @@ def stop_services(services):
 def main():
     setup_logging()
 
-    services = initialize_services(SCHEDULE_JSON)
-    start_services(services)
+    # Create and configure container
+    container = Container()
+    container.config.from_dict({
+        'display_policy_timeout': DISPLAY_POLICY_TIMEOUT,
+        'schedule_json': SCHEDULE_JSON,
+    })
 
-    web_remote.config["IR_SERVICE"] = services["ir_service"]
+    # Start services in correct order
+    start_services(container)
+
+    web_remote.config["IR_SERVICE"] = container.ir_service()
     web_thread = threading.Thread(
         target=web_remote.run,
         kwargs=dict(
@@ -92,7 +63,7 @@ def main():
             return
         logger.info("Shutdown signal received. Stopping services...")
         try:
-            stop_services(services)
+            stop_services(container)
             logger.info("Cleanup complete.")
         finally:
             stop_event.set()

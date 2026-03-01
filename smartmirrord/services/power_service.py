@@ -9,7 +9,8 @@ log = logging.getLogger(__name__)
 class PowerService:
     STABILITY_WINDOW = 1.2  # seconds required to consider stable
 
-    def __init__(self):
+    def __init__(self, power_status: PowerStatus):
+        self._power_gpio = power_status
         self._on_power_on_handlers: List[Callable[[], None]] = []
         self._on_power_off_handlers: List[Callable[[], None]] = []
 
@@ -18,7 +19,6 @@ class PowerService:
         self._lock = threading.Lock()
 
         self._running = False
-        self._power_gpio: Optional[PowerStatus] = None
 
         log.info("PowerService constructed")
 
@@ -31,7 +31,8 @@ class PowerService:
 
         log.info("PowerService starting")
 
-        self._power_gpio = PowerStatus(on_change=self._handle_power_change)
+        # Set the on_change callback for the power_status GPIO
+        self._power_gpio.on_change = self._handle_power_change
 
         # Read current GPIO level once and start stability timer.
         initial_state = self._power_gpio.read()
