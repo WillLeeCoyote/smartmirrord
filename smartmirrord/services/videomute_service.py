@@ -158,8 +158,8 @@ class VideoMuteService:
             self._backlight_on,
         )
 
-        self._uart.write("videomute 0 1")  # panel black
         self._uart.write("videomute 1 1")  # backlight off
+        self._uart.write("videomute 0 1")  # panel black
 
     def _apply_unmute_sequence(self) -> None:
         logger.debug(
@@ -168,8 +168,8 @@ class VideoMuteService:
             self._backlight_on,
         )
 
-        self._uart.write("videomute 1 0")  # backlight on
         self._uart.write("videomute 0 0")  # panel active
+        self._uart.write("videomute 1 0")  # backlight on
 
     def can_handle(self, line: str) -> bool:
         return (
