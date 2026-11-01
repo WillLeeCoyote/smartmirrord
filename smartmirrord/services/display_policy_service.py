@@ -71,10 +71,13 @@ class DisplayPolicyService:
             return
 
         with self._lock:
-            self._cancel_remute_timer()
+            if not self._running:
+                return
 
             if not self._schedule.is_motion_allowed(datetime.now()):
                 return
+
+            self._cancel_remute_timer()
 
             if self._videoMute_desired:
                 self._videoMute_desired = False
